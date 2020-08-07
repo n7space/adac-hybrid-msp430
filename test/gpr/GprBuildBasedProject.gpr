@@ -1,0 +1,90 @@
+project GprBuildBasedProject is
+
+   type Build_Type is ("Release");
+   Build : Build_Type := external ("CFG", "Release");
+
+   IncludePath := external("MSP430_INCLUDE_PATH", "/home/user/tools/ti/msp430-gcc/include/");
+
+   for Create_Missing_Dirs use "True";
+
+   --  following to be updated with all relevant source dirs
+   for Source_Dirs use
+      ("src",
+       "../bsp/msp430g2553",
+       "../utils");
+
+   for Object_Dir use "../../build/test/gpr/obj";
+   for Exec_Dir   use "../../build/test/gpr";
+
+   for Languages use ("C", "Ada");
+
+   for Main use ("main.c");
+
+   package Naming is
+	   for Body_Suffix ("Ada") use ".adb";
+   end Naming;
+
+   package Binder is
+      for Driver ("Ada")  use "msp430-elf-adabind";
+   end Binder;
+
+   -- Need_Ada : TRUE
+
+   package Compiler is
+      for Driver ("C") use "msp430-elf-gcc";
+      for Driver ("Ada") use "msp430-elf-adac";
+
+      for Required_Switches ("C") use ("-c");
+      for Required_Switches ("Ada") use ("-c");
+
+      case Build is
+         when "Release" =>
+            for Default_Switches ("C") use
+               ("-mmcu=msp430g2553",
+                "-msmall",
+                "-ffunction-sections",
+                "-Wall",
+                "-Wextra",
+                "-Wpedantic",
+                "-Wno-unused-parameter",
+                "-Wl,--gc-sections",
+                "-g",
+                "-Os");
+            for Default_Switches ("Ada") use
+               ("-Wgnat,-I.",
+                "-Wgnat,-Isrc",
+                "-mmcu=msp430g2553",
+                "-msmall",
+                "-ffunction-sections");
+      end case;
+   end Compiler;
+
+   package Linker is
+      for Driver use "msp430-elf-gcc";
+
+      for Default_Switches ("C") use
+         ("-L" & IncludePath,
+          "-I" & IncludePath,
+          "-I.",
+          "-mmcu=msp430g2553",
+          "-L../../build/adac/lib",
+          "-msmall",
+          "-lgnatmsp430",
+          "-lllvmmsp430",
+          "-lc",
+          "-mrelax",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Wno-unused-parameter",
+          "-Wl,-Map=main.map",
+          "-Wl,--gc-sections",
+          "-Tmsp430g2553.ld");
+
+   end Linker;
+
+   package Builder is
+      for Executable ("main.c") use "gpr.elf";
+   end Builder;
+
+end GprBuildBasedProject;

@@ -1,0 +1,78 @@
+##--------------------------------------------------------------------------##
+##                                                                          ##
+##                          GNAT RUN-TIME COMPONENTS                        ##
+##                                                                          ##
+##                  S Y S T E M . G C C _ B U I L T I N S                   ##
+##                                                                          ##
+##                                 S p e c                                  ##
+##                                                                          ##
+##                 Copyright (C) 2020, European Space Agency                ##
+##                                                                          ##
+## GNAT is free software;  you can  redistribute it  and/or modify it under ##
+## terms of the  GNU General Public License as published  by the Free Soft- ##
+## ware  Foundation;  either version 3,  or (at your option) any later ver- ##
+## sion.  GNAT is distributed in the hope that it will be useful, but WITH- ##
+## OUT ANY WARRANTY;  without even the  implied warranty of MERCHANTABILITY ##
+## or FITNESS FOR A PARTICULAR PURPOSE.                                     ##
+##                                                                          ##
+## As a special exception under Section 7 of GPL version 3, you are granted ##
+## additional permissions described in the GCC Runtime Library Exception,   ##
+## version 3.1, as published by the Free Software Foundation.               ##
+##                                                                          ##
+## You should have received a copy of the GNU General Public License and    ##
+## a copy of the GCC Runtime Library Exception along with this program;     ##
+## see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see    ##
+## <http://www.gnu.org/licenses/>.                                          ##
+##                                                                          ##
+## GNAT was originally developed  by the GNAT team at  New York University. ##
+## Extensive contributions were provided by Ada Core Technologies Inc.      ##
+##                                                                          ##
+##--------------------------------------------------------------------------##
+
+GNAT_CRT_MSP430=libgnatmsp430.a
+
+LLVM_ADAC=llvm-gcc
+LLVM_ADACFLAGS=-gnatpg -gnatwns
+
+LLVM_CC=llc
+LLVM_CFLAGS=-march=msp430 --function-sections --data-sections
+
+MSP430_CC=msp430-elf-gcc
+MSP430_AR=msp430-elf-gcc-ar
+
+MSP430_CFLAGS_COMMON=-msmall -Wall -Os -ffunction-sections -fdata-sections
+
+# MSP430g2553 is representative of the MSP430 instruction set familiy
+MSP430_CFLAGS_MSP430= \
+	${MSP430_CFLAGS_COMMON} \
+	-mmcu=msp430g2553
+
+.PHONY: all clean
+
+all: ${GNAT_CRT_MSP430}
+
+SRC= $(wildcard *.adb)
+OBJ=$(SRC:%.adb=%.o)
+
+C_SRC=$(wildcard *.c)
+C_OBJ=$(C_SRC:%.c=%.o)
+
+%.bc: %.adb
+	$(LLVM_ADAC) $(LLVM_ADACFLAGS) -c -emit-llvm ${notdir $<}
+
+%.s: %.bc
+	$(LLVM_CC) $(LLVM_CFLAGS) -o $@ $<
+
+%.o: %.s
+	$(MSP430_CC) $(MSP430_CFLAGS_MSP430) -c $< -o $@
+
+%.o: %.c
+	$(MSP430_CC) $(MSP430_CFLAGS_MSP430) -c $< -o $@
+
+${GNAT_CRT_MSP430}: ${OBJ} ${C_OBJ}
+	${AR} cr $@ ${OBJ} ${C_OBJ}
+
+clean:
+	rm -f *.o
+	rm -f *.ali
+	rm -f ${GNAT_CRT_MSP430}

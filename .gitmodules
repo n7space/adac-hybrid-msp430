@@ -1,0 +1,12 @@
+[submodule "tools/msp430-emulator"]
+	path = tools/msp430-emulator
+	url = https://github.com/n7space/MSP430-Emulator.git
+[submodule "src/gnat-llvm"]
+	path = src/gnat-llvm
+	url = https://github.com/AdaCore/gnat-llvm.git
+[submodule "src/llvm-project"]
+	path = src/llvm-project
+	url = https://github.com/llvm/llvm-project.git
+[submodule "src/gcc"]
+	path = src/gcc
+	url = git://gcc.gnu.org/git/gcc.git

@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# This file is part of the adac-hybrid-msp430 distribution
+# Copyright (C) 2020, European Space Agency
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import os
+
+
+class BexchData:
+
+    def __init__(self):
+        self.sections = {}
+        self._last_section = None
+
+    def is_section_header(self, line):
+        return line[0] == '[' and line[-1] == ']'
+
+    def begin_new_section(self, section_name):
+        self.sections[section_name] = []
+        self._last_section = section_name
+
+    def append_line(self, line):
+        if self._last_section:
+            self.sections[self._last_section].append(line)
+
+
+def read_bexch_file(filename):
+    bexch = open(filename)
+    data = BexchData()
+
+    for line in bexch:
+        if data.is_section_header(line.strip()):
+            data.begin_new_section(line.strip()[1:][:-1])
+        else:
+            data.append_line(line.strip())
+
+    return data
+
+
+def write_bexch_file(data, filename):
+    bexch = open(filename, 'w')
+
+    for section in data.sections:
+        bexch.write('[{}]\n'.format(section))
+        for entry in data.sections[section]:
+            bexch.write('{}\n'.format(entry))
+
+    bexch.close()
+
+
+print('MSP430-elf-adabind')
+print('CWD: {}'.format(os.getcwd()))
+print('Args: {}'.format(' '.join(sys.argv)))
+
+if len(sys.argv) != 2:
+    print("MSP430-elf-adabind")
+    print("Utility mapping a list of .ali source files into a list of .o files for linking")
+    print("Usage: msp430-elf-adabind $BEXCH_FILE")
+    sys.exit(1)
+
+data = read_bexch_file(sys.argv[1])
+
+output_data = BexchData()
+output_data.begin_new_section('GENERATED OBJECT FILE')
+output_data.begin_new_section('PROJECT FILES')
+for entry in data.sections['PROJECT FILES']:
+    output_data.append_line(entry)
+output_data.begin_new_section('BOUND OBJECT FILES')
+for entry in data.sections['DEPENDENCY FILES']:
+    name, ext = os.path.splitext(entry)
+    object_file = name + '.o'
+    output_data.append_line(object_file)
+    print(f"Mapping {entry} into {object_file}")
+output_data.begin_new_section('GENERATED SOURCE FILES')
+output_data.begin_new_section('RESULTING OPTIONS')
+output_data.begin_new_section('RUN PATH OPTION')
+
+write_bexch_file(output_data, sys.argv[1])
