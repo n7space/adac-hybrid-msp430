@@ -1,0 +1,156 @@
+#!/usr/bin/python3
+
+# This file is part of the adac-hybrid-msp430 distribution
+# Copyright (C) 2020, European Space Agency
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import os
+import tempfile
+
+ADA_DEF_EXTENSION = ".adb"
+ADA_DEC_EXTENSION = ".ads"
+ASM_EXTENSION = ".s"
+BC_EXTENSION = ".bc"
+ALI_EXTENSION = ".ali"
+
+LLVM_GCC = "llvm-gcc"
+LLVM_GCC_FLAGS = "-emit-llvm"
+
+LLC = "llc-9"
+LLC_FLAGS = "-march=msp430"
+
+MSP_GCC="msp430-elf-gcc"
+
+ADAC_OPTION_PREFIX="-Wadac,"
+GNAT_OPTION_PREFIX="-Wgnat,"
+LLC_OPTION_PREFIX="-Wllc,"
+DIRECT_GNAT_OPTION_PREFIX="-gnat"
+LANGUAGE_OPTION="-x"
+
+ADA_MAIN="keep_ada_main"
+KEEP_INTERMEDIATES="keep_intermediates"
+
+def adaToBaseName(name):
+    fileName, _ = os.path.splitext(os.path.basename(name))
+    return fileName
+
+def remove(path):
+    if os.path.exists(path):
+        print(f"Removing intermediate product {path}")
+        os.remove(path)
+
+def cleanUpIntermediates(baseName):
+    for path in [
+        baseName + ASM_EXTENSION,
+        baseName + BC_EXTENSION,
+        baseName + ALI_EXTENSION,
+        ]:
+        remove(path)
+
+def executeCmd(cmd):
+    print(cmd)
+    os.system(cmd)
+
+def findContructorNames(fileName):
+    with open(fileName) as file:
+        lines = file.readlines()
+        linesWithConstructors = [line for line in lines if "___elabb:" in line]
+        constructors = [line[:line.find(":")] for line in linesWithConstructors]
+        return constructors
+
+def appendConstructorSections(fileName, constructors):
+    if len(constructors) == 0:
+        return
+    with open(fileName, "a") as file:
+        for constructor in constructors:
+            file.write("\t.section	.init_array,\"aw\"\n" \
+	                   "\t.balign 2\n" \
+	                   f"\t.short	{constructor}\n")
+
+
+def postprocessAsm(options, fileName):
+    if not options[ADA_MAIN]:
+        # This could be achieved via:
+        # -eentry - resulting in a possible rejection of the start files, which may be not desired; also,
+        #   this should be passed explicitly by the user, as that must be passed to the linker
+        #   (user can have more complex build; may use msp430-gcc directly, etc...);
+        # objcopy --redefine-sym - this must be done on an object file, which may or
+        #   may not be created, depending on flags to gcc;
+        # This solution seems to be the safest. A better one is welcome.
+        executeCmd(f"sed -i 's/_ada_main/main/g' {fileName}")
+    constructors = findContructorNames(fileName)
+    appendConstructorSections(fileName, constructors)
+
+
+options={
+    ADA_MAIN : False,
+    KEEP_INTERMEDIATES : False
+}
+
+def parseOptions(options, adacOptions):
+    if KEEP_INTERMEDIATES in adacOptions:
+        options[KEEP_INTERMEDIATES] = True
+    if ADA_MAIN in adacOptions:
+        options[ADA_MAIN] = True
+
+gccCmdLine = ""
+adacOptions = []
+llcOptions = []
+gnatOptions = []
+adaFiles = []
+baseNames = []
+args = sys.argv[1:]
+ignoreNextOption = False
+
+for arg in args:
+    if ignoreNextOption:
+        ignoreNextOption = False
+        continue
+    if arg == LANGUAGE_OPTION:
+        # Adac is specialized in compiling Ada files, so this option is ignored
+        ignoreNextOption = True
+    elif arg.endswith(ADA_DEF_EXTENSION) or arg.endswith(ADA_DEC_EXTENSION):
+        adaFiles += [arg]
+        gccCmdLine += " " + adaToBaseName(arg) + ASM_EXTENSION
+    elif arg.startswith(GNAT_OPTION_PREFIX):
+        gnatOptions += [arg[len(GNAT_OPTION_PREFIX):]]
+    elif arg.startswith(DIRECT_GNAT_OPTION_PREFIX):
+        gnatOptions += [arg]
+    elif arg.startswith(ADAC_OPTION_PREFIX):
+        adacOptions += [arg[len(ADAC_OPTION_PREFIX):]]
+    elif arg.startswith(LLC_OPTION_PREFIX):
+        llcOptions += [arg[len(LLC_OPTION_PREFIX):]]
+    else:
+        gccCmdLine += " " + arg
+try:
+    parseOptions(options, adacOptions)
+    for file in adaFiles:
+        baseName = adaToBaseName(file)
+        baseNames += [baseName]
+        # Temporary files cannot be used, as LLVM_GCC does not like -o option.
+        # Therefore we need to clean-up manually in the finally section.
+        bcFile = baseName + BC_EXTENSION
+        asmFile = baseName + ASM_EXTENSION
+        gnatOptions = " ".join(gnatOptions)
+        executeCmd(f"{LLVM_GCC} {LLVM_GCC_FLAGS} {gnatOptions} -c {file}")
+        llcOptions = " ".join(llcOptions)
+        executeCmd(f"{LLC} {LLC_FLAGS} {llcOptions} -o {asmFile} {bcFile}")
+        postprocessAsm(options, asmFile)
+
+    executeCmd(f"{MSP_GCC} {gccCmdLine}")
+finally:
+    if not options[KEEP_INTERMEDIATES]:
+        for name in baseNames:
+            cleanUpIntermediates(name)

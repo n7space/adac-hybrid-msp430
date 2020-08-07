@@ -1,0 +1,12 @@
+.vscode/
+build/*
+src/gnat-runtime/build/*
+src/llvm-runtime/build/*
+*.code-workspace
+*.o
+*.ali
+*.bc
+*.ll
+*.id
+*.out
+*.log
