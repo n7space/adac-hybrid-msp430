@@ -34,9 +34,9 @@ ARG MSP430_INSTALL_DIR=${TOOLS_DIR}/msp430-gcc
 
 # Basic utilities
 RUN apt-get update && apt-get install -y \
-    cmake \
-    g++ \
-    gcc \
+    cmake=3.13.4-1build1 \
+    g++=4:9.2.1-3.1ubuntu1 \
+    gcc=4:9.2.1-3.1ubuntu1 \
     git \
     git-lfs
 
@@ -47,13 +47,13 @@ RUN mkdir -p ${HOME_DIR} && \
 
 # LLVM
 RUN apt-get update && apt-get install -y \
-    clang \
-    llvm-dev
+    clang=1:9.0-49~exp1 \
+    llvm-dev=1:9.0-49~exp1
 
 # GNAT
 RUN apt-get update && apt-get install -y \
-    gnat \
-    gprbuild
+    gnat=8.0.1ubuntu1 \
+    gprbuild=2018-6
 
 # MSP430-GCC
 COPY tools/${MSP430_INSTALLER} ${TOOLS_DIR}

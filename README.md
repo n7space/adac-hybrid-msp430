@@ -21,7 +21,7 @@ This produces build/adac directory.
 
 In order to use the compiler, additional dependencies must be installed:
 * llvm-dev,
-* clang, 
+* clang,
 * gcc,
 * gnat,
 * gprbuild.
@@ -35,8 +35,8 @@ The main makefile provides 3 test targets:
 
 In order to execute `emutest`, the msp430g2553 emulator must be compiled. For compilation instructions, please refer to the emulator's README.
 
-In order to execute 'hwtest', the Texas Instruments msp430 gcc compiler toolchain must be installed and present in PATH, 
-and a msp430fr5969 development board must be connected to the user system. 
+In order to execute 'hwtest', the Texas Instruments msp430 gcc compiler toolchain must be installed and present in PATH,
+and a msp430fr5969 development board must be connected to the user system.
 The project has been tested on MSP430FR5969 LaunchPad Evaluation Kit.
 
 
@@ -66,7 +66,7 @@ Adac accepts the following options:
 Compile `.adb` source to an object file:
 
 `msp430-elf-adac ${CFLAGS} -o $@ -c $<`
-	
+
 * $@ - output object name
 * $< - input `.adb` file name
 * ${CFLAGS} - project specific compiler flags
@@ -85,11 +85,11 @@ Example CFLAGS:
 
 ```
 CFLAGS= -mmcu=msp430g2553 \
-	-msmall \
-	-Wall \
-	-Wgnat,-gnatif \
-	-Wgnat,-IadditionalIncludeDirectory \
-	-Wllc,--function-sections
+        -msmall \
+        -Wall \
+        -Wgnat,-gnatif \
+        -Wgnat,-IadditionalIncludeDirectory \
+        -Wllc,--function-sections
 ```
 
 * -mmcu=msp430g2553 - target msp430g2553 microcontroller (selects instruction set, as well as default linker script)
@@ -103,9 +103,9 @@ Example LFLAGS:
 
 ```
 LFLAGS= -L pathToAdacLibraries \
-    -L pathToMsp430GccLibraries \
-    -Wl,--gc-sections \
-    -T msp430g2553.ld
+        -L pathToMsp430GccLibraries \
+        -Wl,--gc-sections \
+        -T msp430g2553.ld
 ```
 
 * -L pathToAdacLibraries - add adac libraries to library path
@@ -183,7 +183,7 @@ project GprBuildBasedProject is
    for Main use ("main.c");
 
    package Naming is
-	   for Body_Suffix ("Ada") use ".adb";
+      for Body_Suffix ("Ada") use ".adb";
    end Naming;
 
    package Binder is
@@ -255,7 +255,7 @@ Both MSP430 and MSP430X instruction set architectures are supported. The archite
 ### .init_array
 
 As the toolchain uses gcc for the last compilation stage, it relies on `.init_array` for executing initializers. The consequence is that `adainit` function is not needed and is not generated.
-This affects C and Ada code interoperation - normally, a C programmer integrating Ada code should make a call to `adainit` within `main`. However, with adac this is not needed. 
+This affects C and Ada code interoperation - normally, a C programmer integrating Ada code should make a call to `adainit` within `main`. However, with adac this is not needed.
 
 ### Gnat and llvm libraries
 
@@ -273,7 +273,7 @@ User is responsible for linking the correct libraries.
 
 The toolchain is based on AdaCore's [gnat llvm](https://github.com/AdaCore/gnat-llvm) (which in turn relies on gcc and llvm projects)
 and Texas Instrument's version of [gcc](https://www.ti.com/tool/MSP430-GCC-OPENSOURCE).
-The use of Texas Instrument's gcc ensured the ability to use the newest msp430 microcontrollers, 
+The use of Texas Instrument's gcc ensured the ability to use the newest msp430 microcontrollers,
 some of which (e.g. msp430fr5969, of special interest for the parent activity)
 cannot be safely compiled using standard [msp430-gcc](https://packages.debian.org/sid/gcc-msp430).
 The llvm-runtime library contains code from the [llvm project](https://llvm.org/).
@@ -303,4 +303,3 @@ The project structure is as follows:
 ## License
 
 This project combines several other open-source projects. Please refer to the LICENSE file for details.
-
