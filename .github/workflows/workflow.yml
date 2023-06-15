@@ -8,7 +8,7 @@ jobs:
     steps:
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           lfs: true
           submodules: recursive
@@ -17,7 +17,7 @@ jobs:
         run: make
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: adac-ubuntu-tar-gz
           path: build/adac.tar.gz
@@ -30,7 +30,7 @@ jobs:
     steps:
 
       - name: Download artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: adac-ubuntu-tar-gz
 
