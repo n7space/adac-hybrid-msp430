@@ -16,7 +16,7 @@
 #-------------------------------#
 # Development/build environment #
 #-------------------------------#
-FROM ubuntu:19.10 as BUILD_ENV
+FROM ubuntu:19.10 as build_env
 
 # Meta
 LABEL PROJECT_NAME="Tiny Runtime to Run Model-Based Software on Cubesats"
@@ -31,6 +31,9 @@ ARG HOME_DIR=/home/${USER_NAME}
 ARG TOOLS_DIR=${HOME_DIR}/tools
 ARG MSP430_INSTALLER=msp430-gcc-full-linux-x64-installer-8.3.2.2.run
 ARG MSP430_INSTALL_DIR=${TOOLS_DIR}/msp430-gcc
+
+# Support for old Ubuntu version
+RUN sed -i -re 's/([a-z]{2}\.)?archive.ubuntu.com|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
 
 # Basic utilities
 RUN apt-get update && apt-get install -y \
@@ -66,7 +69,7 @@ ENV PATH=${PATH}:${MSP430_INSTALL_DIR}/bin
 #-------------------#
 # ADAC distribution #
 #-------------------#
-FROM BUILD_ENV as ADAC
+FROM build_env as adac
 
 # Meta
 LABEL PROJECT_NAME="Tiny Runtime to Run Model-Based Software on Cubesats"
