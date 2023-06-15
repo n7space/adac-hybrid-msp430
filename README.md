@@ -5,7 +5,7 @@ A hybrid compiler toolchain for MSP430 platform which can compile standalone Ada
 
 The project was initially created by N7 Space z o.o. for the European Space Agency as a part of "Tiny Runtime to Run Model-Based Software on CubeSats" activity.
 
-Installation
+Installation 
 ---------------------------------------------
 
 The project relies on GNU makefiles and docker for compilation. In order to build the compiler toolchain:
