@@ -19,6 +19,8 @@ import sys
 import os
 import tempfile
 
+ADAC_VERSION_STRING = "1.0.1"
+
 ADA_DEF_EXTENSION = ".adb"
 ADA_DEC_EXTENSION = ".ads"
 ASM_EXTENSION = ".s"
@@ -38,6 +40,7 @@ GNAT_OPTION_PREFIX="-Wgnat,"
 LLC_OPTION_PREFIX="-Wllc,"
 DIRECT_GNAT_OPTION_PREFIX="-gnat"
 LANGUAGE_OPTION="-x"
+VERSION_OPTION="--version"
 
 ADA_MAIN="keep_ada_main"
 KEEP_INTERMEDIATES="keep_intermediates"
@@ -118,6 +121,8 @@ for arg in args:
     if ignoreNextOption:
         ignoreNextOption = False
         continue
+    if arg == VERSION_OPTION:
+         print(f"msp430-elf-adac version={ADAC_VERSION_STRING}")
     if arg == LANGUAGE_OPTION:
         # Adac is specialized in compiling Ada files, so this option is ignored
         ignoreNextOption = True
